@@ -1,0 +1,80 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '')
+
+interface Message {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { message, history } = await request.json()
+
+    if (!process.env.GOOGLE_API_KEY) {
+      return NextResponse.json(
+        { error: 'Google API key not configured' },
+        { status: 500 }
+      )
+    }
+
+    // Get the generative model
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
+
+    // Build context from conversation history
+    let contextPrompt = `You are a Product Idea Assistant, an AI expert in product management and innovation. Your role is to generate creative, practical, and market-viable product ideas based on user inputs.
+
+Guidelines:
+- Generate 3-5 specific product ideas per request
+- Include brief explanations of the value proposition
+- Consider current market trends and technology capabilities
+- Focus on problems that genuinely need solving
+- Be creative but realistic about implementation
+- Format responses clearly with numbered ideas
+- Ask follow-up questions to refine ideas when appropriate
+
+Previous conversation context:`
+
+    // Add recent conversation history for context
+    if (history && history.length > 0) {
+      history.slice(-4).forEach((msg: Message) => {
+        contextPrompt += `\n${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+      })
+    }
+
+    contextPrompt += `\n\nUser: ${message}\n\nAssistant:`
+
+    // Generate response
+    const result = await model.generateContent(contextPrompt)
+    const response = await result.response
+    const text = response.text()
+
+    return NextResponse.json({ response: text })
+
+  } catch (error) {
+    console.error('Error generating ideas:', error)
+    
+    // Handle specific API errors
+    if (error instanceof Error) {
+      if (error.message.includes('API_KEY')) {
+        return NextResponse.json(
+          { error: 'Invalid API key configuration' },
+          { status: 401 }
+        )
+      }
+      if (error.message.includes('quota')) {
+        return NextResponse.json(
+          { error: 'API quota exceeded. Please try again later.' },
+          { status: 429 }
+        )
+      }
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to generate ideas. Please try again.' },
+      { status: 500 }
+    )
+  }
+}
