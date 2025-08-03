@@ -43,42 +43,42 @@ export default function Home() {
           <div className="text-center space-y-8">
             <div className="space-y-4">
               <h2 className="text-4xl font-bold text-gray-900">
-                AI-Powered Product Ideation
+                Super Insightful Brainstorming Assistant
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Generate innovative product ideas tailored to any industry or problem space. 
-                Powered by Google Gemini and built with modern AI frameworks.
+                Breakthrough product thinking using First Principles, Design Thinking, and Structured Frameworks. 
+                From revolutionary insights to systematic validation - all powered by advanced AI.
               </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <div className="bg-white p-6 rounded-lg shadow-sm border">
                 <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4">
-                  <Lightbulb className="w-6 h-6 text-primary-600" />
+                  <div className="text-primary-600 font-bold text-lg">🔬</div>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Smart Ideation</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">First Principles</h3>
                 <p className="text-gray-600 text-sm">
-                  Generate contextual product ideas based on industry trends and market gaps
+                  Question assumptions, identify fundamental truths, and discover breakthrough solutions
                 </p>
               </div>
               
               <div className="bg-white p-6 rounded-lg shadow-sm border">
                 <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4">
-                  <Send className="w-6 h-6 text-primary-600" />
+                  <div className="text-primary-600 font-bold text-lg">🎯</div>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Interactive Chat</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Design Thinking</h3>
                 <p className="text-gray-600 text-sm">
-                  Refine ideas through conversation and get detailed explanations
+                  Empathize, Define, Ideate, Prototype, Test - complete user-centered innovation process
                 </p>
               </div>
               
               <div className="bg-white p-6 rounded-lg shadow-sm border">
                 <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4">
-                  <Github className="w-6 h-6 text-primary-600" />
+                  <div className="text-primary-600 font-bold text-lg">🧠</div>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Open Source</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Structured Frameworks</h3>
                 <p className="text-gray-600 text-sm">
-                  Built with LangChain and Gemini API. Code available on GitHub
+                  SCAMPER, 5 Whys, Persona Canvas, and more proven brainstorming methodologies
                 </p>
               </div>
             </div>
@@ -87,15 +87,15 @@ export default function Home() {
               onClick={() => setShowChat(true)}
               className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
             >
-              <Lightbulb className="w-5 h-5" />
-              <span>Start Generating Ideas</span>
+              <div className="text-lg">🧠</div>
+              <span>Start Breakthrough Thinking</span>
             </button>
 
             <div className="text-sm text-gray-500 max-w-2xl mx-auto">
               <p>
-                <strong>Example prompts:</strong> "Generate product ideas for sustainable fashion", 
-                "What are some fintech solutions for small businesses?", 
-                "AI tools for remote team collaboration"
+                <strong>Try these approaches:</strong> "Revolutionize urban transportation from first principles", 
+                "Design a user-centered fintech experience", 
+                "Use SCAMPER to improve remote collaboration", "Question assumptions about food delivery"
               </p>
             </div>
           </div>

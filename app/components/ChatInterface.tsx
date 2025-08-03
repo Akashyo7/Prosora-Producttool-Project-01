@@ -8,6 +8,8 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
+  mode?: string
+  suggestions?: string[]
 }
 
 interface ChatInterfaceProps {
@@ -19,10 +21,12 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
     {
       id: '1',
       role: 'assistant',
-      content: "Hi! I'm your Product Idea Assistant. Tell me about an industry, problem, or market you're interested in, and I'll generate innovative product ideas for you. What would you like to explore?",
-      timestamp: new Date()
+      content: "Hi! I'm your Super Insightful Brainstorming Assistant. I can help you think through problems using:\n\n🔬 **First Principles** - Question assumptions and find breakthrough solutions\n🎯 **Design Thinking** - User-centered innovation process\n🧠 **Structured Frameworks** - Proven brainstorming methodologies\n\nI'll automatically detect the best approach for your challenge, or you can specify your preferred thinking mode. What would you like to explore?",
+      timestamp: new Date(),
+      mode: 'auto'
     }
   ])
+  const [currentMode, setCurrentMode] = useState<string>('auto')
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -59,7 +63,8 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
         },
         body: JSON.stringify({
           message: input.trim(),
-          history: messages.slice(-5) // Send last 5 messages for context
+          history: messages.slice(-5), // Send last 5 messages for context
+          mode: currentMode === 'auto' ? undefined : currentMode
         }),
       })
 
@@ -73,7 +78,14 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: data.response,
-        timestamp: new Date()
+        timestamp: new Date(),
+        mode: data.mode,
+        suggestions: data.suggestions
+      }
+      
+      // Update current mode if detected
+      if (data.mode && data.mode !== currentMode) {
+        setCurrentMode(data.mode)
       }
 
       setMessages(prev => [...prev, assistantMessage])
@@ -102,26 +114,51 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
   }
 
   const examplePrompts = [
-    "Generate product ideas for sustainable fashion",
-    "What are some fintech solutions for small businesses?",
-    "AI tools for remote team collaboration",
-    "Healthcare apps for elderly care"
+    "🔬 Revolutionize urban transportation from first principles",
+    "🎯 Design a user-centered fintech experience", 
+    "🧠 Use SCAMPER to improve remote collaboration",
+    "❓ Question assumptions about food delivery",
+    "🚀 Create breakthrough solutions for climate change",
+    "👥 Apply design thinking to elderly healthcare"
   ]
+
+  const getModeIcon = (mode?: string) => {
+    switch (mode) {
+      case 'first-principles': return '🔬'
+      case 'design-thinking': return '🎯'
+      case 'frameworks': return '🧠'
+      default: return '🚀'
+    }
+  }
+
+  const getModeLabel = (mode?: string) => {
+    switch (mode) {
+      case 'first-principles': return 'First Principles'
+      case 'design-thinking': return 'Design Thinking'
+      case 'frameworks': return 'Structured Frameworks'
+      default: return 'Auto-Adaptive'
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center space-x-4 mb-6">
-        <button
-          onClick={onBack}
-          className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back</span>
-        </button>
-        <div className="flex items-center space-x-2">
-          <Lightbulb className="w-6 h-6 text-primary-600" />
-          <h2 className="text-xl font-semibold">Product Idea Generator</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onBack}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back</span>
+          </button>
+          <div className="flex items-center space-x-2">
+            <div className="text-2xl">{getModeIcon(currentMode)}</div>
+            <h2 className="text-xl font-semibold">Super Insightful Brainstorming</h2>
+          </div>
+        </div>
+        <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+          {getModeLabel(currentMode)}
         </div>
       </div>
 
@@ -148,6 +185,24 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
                   <div className="prose prose-sm max-w-none">
                     <div className="whitespace-pre-wrap">{message.content}</div>
                   </div>
+                  
+                  {/* Show suggestions for assistant messages */}
+                  {message.role === 'assistant' && message.suggestions && message.suggestions.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-gray-200">
+                      <p className="text-xs text-gray-500 mb-2">💡 Try these next:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {message.suggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setInput(suggestion)}
+                            className="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-full hover:bg-primary-100 transition-colors"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 {message.role === 'assistant' && (
                   <button
