@@ -302,7 +302,7 @@ export const suggestFramework = (userInput: string, domain: string): FrameworkTe
   
   // Validation keywords
   if (input.includes('prioritize') || input.includes('validate') || input.includes('business model')) {
-    return domain === 'startup' ? getFramework('lean-canvas') : getFramework('ice-scoring')
+    return domain === 'startup' ? (getFramework('lean-canvas') || null) : (getFramework('ice-scoring') || null)
   }
   
   // Journey mapping keywords
