@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { ArrowLeft, Send, Lightbulb, Copy, Check } from 'lucide-react'
+import EnhancedMessage from './EnhancedMessage'
 
 interface Message {
   id: string
@@ -10,6 +11,11 @@ interface Message {
   timestamp: Date
   mode?: string
   suggestions?: string[]
+  needsInput?: {
+    type: 'text' | 'choice' | 'rating'
+    prompt: string
+    options?: string[]
+  }
 }
 
 interface IntelligenceContext {
@@ -247,59 +253,19 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
       <div className="bg-white rounded-lg shadow-sm border min-h-[500px] flex flex-col">
         <div className="flex-1 p-6 overflow-y-auto space-y-4">
           {messages.map((message) => (
-            <div
+            <EnhancedMessage
               key={message.id}
-              className={`chat-message ${
-                message.role === 'user' ? 'user-message' : 'assistant-message'
-              }`}
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="font-medium text-sm">
-                      {message.role === 'user' ? 'You' : 'Assistant'}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {message.timestamp.toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <div className="prose prose-sm max-w-none">
-                    <div className="whitespace-pre-wrap">{message.content}</div>
-                  </div>
-                  
-                  {/* Show suggestions for assistant messages */}
-                  {message.role === 'assistant' && message.suggestions && message.suggestions.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-gray-200">
-                      <p className="text-xs text-gray-500 mb-2">💡 Try these next:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {message.suggestions.map((suggestion, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setInput(suggestion)}
-                            className="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-full hover:bg-primary-100 transition-colors"
-                          >
-                            {suggestion}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {message.role === 'assistant' && (
-                  <button
-                    onClick={() => copyToClipboard(message.content, message.id)}
-                    className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                    title="Copy to clipboard"
-                  >
-                    {copiedId === message.id ? (
-                      <Check className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </button>
-                )}
-              </div>
-            </div>
+              message={message}
+              onCopy={copyToClipboard}
+              onInputResponse={(response) => {
+                setInput(response)
+                // Auto-submit if it's a suggestion click
+                if (message.suggestions?.includes(response)) {
+                  handleSubmit(new Event('submit') as any)
+                }
+              }}
+              copiedId={copiedId}
+            />
           ))}
           
           {isLoading && (

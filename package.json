@@ -11,13 +11,16 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.2.1",
+    "@langchain/google-genai": "^0.0.8",
+    "langchain": "^0.1.0",
+    "lucide-react": "^0.303.0",
     "next": "14.0.4",
     "react": "^18",
     "react-dom": "^18",
-    "@google/generative-ai": "^0.2.1",
-    "langchain": "^0.1.0",
-    "@langchain/google-genai": "^0.0.8",
-    "lucide-react": "^0.303.0"
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",
