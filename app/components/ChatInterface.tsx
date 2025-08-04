@@ -30,20 +30,32 @@ interface IntelligenceContext {
 
 interface ChatInterfaceProps {
   onBack: () => void
+  mode?: 'prosora' | 'guest' | null
+  sessionId?: string | null
 }
 
-export default function ChatInterface({ onBack }: ChatInterfaceProps) {
+export default function ChatInterface({ onBack, mode = 'guest', sessionId }: ChatInterfaceProps) {
+  const getInitialMessage = () => {
+    const baseMessage = "Hi! I'm your Super Insightful Brainstorming Assistant. I can help you think through problems using:\n\n🔬 **First Principles** - Question assumptions and find breakthrough solutions\n🎯 **Design Thinking** - User-centered innovation process\n🧠 **Structured Frameworks** - Proven brainstorming methodologies\n\nI'll automatically detect the best approach for your challenge, or you can specify your preferred thinking mode."
+    
+    if (mode === 'prosora') {
+      return baseMessage + "\n\n✨ **Prosora Mode Active**: Your session will be saved and I'll learn from our conversations to provide better insights over time. What would you like to explore?"
+    } else {
+      return baseMessage + "\n\n👥 **Guest Mode**: This is a temporary session for you to explore my capabilities. What would you like to explore?"
+    }
+  }
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: "Hi! I'm your Super Insightful Brainstorming Assistant. I can help you think through problems using:\n\n🔬 **First Principles** - Question assumptions and find breakthrough solutions\n🎯 **Design Thinking** - User-centered innovation process\n🧠 **Structured Frameworks** - Proven brainstorming methodologies\n\nI'll automatically detect the best approach for your challenge, or you can specify your preferred thinking mode. What would you like to explore?",
+      content: getInitialMessage(),
       timestamp: new Date(),
       mode: 'auto'
     }
   ])
   const [currentMode, setCurrentMode] = useState<string>('auto')
-  const [sessionId, setSessionId] = useState<string>('')
+  const [currentSessionId, setCurrentSessionId] = useState<string>(sessionId || '')
   const [intelligence, setIntelligence] = useState<IntelligenceContext | null>(null)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -83,7 +95,8 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
           message: input.trim(),
           history: messages.slice(-5), // Send last 5 messages for context
           mode: currentMode === 'auto' ? undefined : currentMode,
-          sessionId: sessionId
+          sessionId: currentSessionId,
+          userMode: mode
         }),
       })
 
@@ -108,8 +121,8 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
       }
       
       // Update session ID and intelligence context
-      if (data.sessionId && !sessionId) {
-        setSessionId(data.sessionId)
+      if (data.sessionId && !currentSessionId) {
+        setCurrentSessionId(data.sessionId)
       }
       
       if (data.intelligence) {
@@ -186,11 +199,18 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
           </div>
         </div>
         <div className="flex items-center space-x-2">
+          <div className={`text-sm px-3 py-1 rounded-full ${
+            mode === 'prosora' 
+              ? 'text-primary-600 bg-primary-50' 
+              : 'text-green-600 bg-green-50'
+          }`}>
+            {mode === 'prosora' ? '🔐 Prosora Mode' : '👥 Guest Mode'}
+          </div>
           <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
             {getModeLabel(currentMode)}
           </div>
           {intelligence && (
-            <div className="text-sm text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
+            <div className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
               {intelligence.domain} • {intelligence.stage}
             </div>
           )}
