@@ -84,12 +84,12 @@ export class IntelligenceStorage {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays)
     
-    for (const [sessionId, context] of contextStore.entries()) {
+    Array.from(contextStore.entries()).forEach(([sessionId, context]) => {
       if (context.updatedAt < cutoffDate) {
         contextStore.delete(sessionId)
         intelligenceStore.delete(sessionId)
       }
-    }
+    })
   }
 }
 
