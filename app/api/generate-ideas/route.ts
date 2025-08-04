@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { IntelligenceStorage, generateSessionId } from '../../../lib/storage'
+import { detectDomain, extractInsights } from '../../../lib/intelligence'
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '')
@@ -19,9 +21,25 @@ interface ThinkingContext {
   insights?: string[]
 }
 
-// System prompts for different thinking modes
-const getSystemPrompt = (mode: ThinkingMode, context?: ThinkingContext) => {
-  const basePrompt = `You are a Super Insightful Brainstorming Assistant, an expert in advanced product thinking methodologies. You guide users through breakthrough problem-solving using multiple thinking frameworks.`
+// Enhanced system prompts with intelligence layer context
+const getSystemPrompt = (mode: ThinkingMode, context?: ThinkingContext, intelligenceContext?: any) => {
+  let basePrompt = `You are a Super Insightful Brainstorming Assistant with AI Product Intelligence. You have persistent memory and learn from every interaction to provide increasingly valuable insights.`
+  
+  // Add intelligence context if available
+  if (intelligenceContext) {
+    basePrompt += `\n\n🧠 INTELLIGENCE CONTEXT:
+- Domain: ${intelligenceContext.domain}
+- Stage: ${intelligenceContext.stage}
+- Previous insights: ${intelligenceContext.insightCount}
+- Problems identified: ${intelligenceContext.problemCount}
+- Solutions explored: ${intelligenceContext.solutionCount}
+
+💡 CURRENT RECOMMENDATIONS:
+${intelligenceContext.recommendations.map((r: string) => `- ${r}`).join('\n')}
+
+🔮 PREDICTIONS:
+${intelligenceContext.predictions.map((p: any) => `- ${p.outcome} (${Math.round(p.probability * 100)}% confidence)`).join('\n')}`
+  }
 
   switch (mode) {
     case 'first-principles':
@@ -153,7 +171,7 @@ const detectThinkingMode = (message: string, history: Message[]): { mode: Thinki
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, history, mode: requestedMode, context } = await request.json()
+    const { message, history, mode: requestedMode, context, sessionId } = await request.json()
 
     if (!process.env.GOOGLE_API_KEY) {
       return NextResponse.json(
@@ -161,6 +179,14 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    // Get or create intelligence context
+    const currentSessionId = sessionId || generateSessionId()
+    const domain = detectDomain(message)
+    const intelligence = IntelligenceStorage.getOrCreateContext(currentSessionId, { domain })
+    
+    // Get intelligence context for enhanced prompting
+    const intelligenceContext = IntelligenceStorage.getContextSummary(currentSessionId)
 
     // Get the generative model
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
@@ -170,8 +196,8 @@ export async function POST(request: NextRequest) {
       ? { mode: requestedMode, context: context || { mode: requestedMode } }
       : detectThinkingMode(message, history || [])
 
-    // Build context from conversation history
-    let contextPrompt = getSystemPrompt(mode, detectedContext)
+    // Build context from conversation history with intelligence layer
+    let contextPrompt = getSystemPrompt(mode, detectedContext, intelligenceContext)
     
     contextPrompt += `\n\nPrevious conversation context:`
     
@@ -189,11 +215,43 @@ export async function POST(request: NextRequest) {
     const response = await result.response
     const text = response.text()
 
+    // Extract and store insights from the conversation
+    const insights = extractInsights(message + ' ' + text, mode)
+    insights.forEach(insight => {
+      if (insight.type && insight.content) {
+        intelligence.addInsight({
+          type: insight.type,
+          content: insight.content,
+          confidence: insight.confidence || 0.5,
+          source: 'ai',
+          framework: mode,
+          tags: insight.tags || []
+        })
+      }
+    })
+
+    // Update context with new information
+    const contextData = intelligence.exportContext()
+    if (message.toLowerCase().includes('problem') && !contextData.problems.includes(message)) {
+      contextData.problems.push(message)
+    }
+    if (message.toLowerCase().includes('solution') && !contextData.solutions.includes(message)) {
+      contextData.solutions.push(message)
+    }
+
+    // Save updated context
+    IntelligenceStorage.saveContext(currentSessionId, intelligence)
+
+    // Get updated intelligence context
+    const updatedIntelligenceContext = IntelligenceStorage.getContextSummary(currentSessionId)
+
     return NextResponse.json({ 
       response: text,
       mode: mode,
       context: detectedContext,
-      suggestions: generateNextStepSuggestions(mode, message)
+      suggestions: generateNextStepSuggestions(mode, message),
+      sessionId: currentSessionId,
+      intelligence: updatedIntelligenceContext
     })
 
   } catch (error) {

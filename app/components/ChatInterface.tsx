@@ -12,6 +12,16 @@ interface Message {
   suggestions?: string[]
 }
 
+interface IntelligenceContext {
+  domain: string
+  stage: string
+  insightCount: number
+  problemCount: number
+  solutionCount: number
+  recommendations: string[]
+  predictions: { outcome: string; probability: number }[]
+}
+
 interface ChatInterfaceProps {
   onBack: () => void
 }
@@ -27,6 +37,8 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
     }
   ])
   const [currentMode, setCurrentMode] = useState<string>('auto')
+  const [sessionId, setSessionId] = useState<string>('')
+  const [intelligence, setIntelligence] = useState<IntelligenceContext | null>(null)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -64,7 +76,8 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
         body: JSON.stringify({
           message: input.trim(),
           history: messages.slice(-5), // Send last 5 messages for context
-          mode: currentMode === 'auto' ? undefined : currentMode
+          mode: currentMode === 'auto' ? undefined : currentMode,
+          sessionId: sessionId
         }),
       })
 
@@ -86,6 +99,15 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
       // Update current mode if detected
       if (data.mode && data.mode !== currentMode) {
         setCurrentMode(data.mode)
+      }
+      
+      // Update session ID and intelligence context
+      if (data.sessionId && !sessionId) {
+        setSessionId(data.sessionId)
+      }
+      
+      if (data.intelligence) {
+        setIntelligence(data.intelligence)
       }
 
       setMessages(prev => [...prev, assistantMessage])
@@ -154,13 +176,72 @@ export default function ChatInterface({ onBack }: ChatInterfaceProps) {
           </button>
           <div className="flex items-center space-x-2">
             <div className="text-2xl">{getModeIcon(currentMode)}</div>
-            <h2 className="text-xl font-semibold">Super Insightful Brainstorming</h2>
+            <h2 className="text-xl font-semibold">AI Product Intelligence</h2>
           </div>
         </div>
-        <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-          {getModeLabel(currentMode)}
+        <div className="flex items-center space-x-2">
+          <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+            {getModeLabel(currentMode)}
+          </div>
+          {intelligence && (
+            <div className="text-sm text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
+              {intelligence.domain} • {intelligence.stage}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Intelligence Dashboard */}
+      {intelligence && (
+        <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg p-4 mb-6 border border-primary-100">
+          <div className="flex items-center space-x-2 mb-3">
+            <div className="text-lg">🧠</div>
+            <h3 className="font-semibold text-gray-900">AI Intelligence Layer</h3>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary-600">{intelligence.insightCount}</div>
+              <div className="text-xs text-gray-600">Insights Generated</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary-600">{intelligence.problemCount}</div>
+              <div className="text-xs text-gray-600">Problems Identified</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary-600">{intelligence.solutionCount}</div>
+              <div className="text-xs text-gray-600">Solutions Explored</div>
+            </div>
+          </div>
+
+          {intelligence.recommendations.length > 0 && (
+            <div className="mb-3">
+              <div className="text-sm font-medium text-gray-700 mb-2">💡 AI Recommendations:</div>
+              <div className="space-y-1">
+                {intelligence.recommendations.map((rec, index) => (
+                  <div key={index} className="text-sm text-gray-600 bg-white px-3 py-1 rounded">
+                    {rec}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {intelligence.predictions.length > 0 && (
+            <div>
+              <div className="text-sm font-medium text-gray-700 mb-2">🔮 Predictions:</div>
+              <div className="space-y-1">
+                {intelligence.predictions.map((pred, index) => (
+                  <div key={index} className="text-sm text-gray-600 bg-white px-3 py-1 rounded flex justify-between">
+                    <span>{pred.outcome}</span>
+                    <span className="font-medium text-primary-600">{Math.round(pred.probability * 100)}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Chat Messages */}
       <div className="bg-white rounded-lg shadow-sm border min-h-[500px] flex flex-col">
