@@ -139,9 +139,13 @@ export default function SessionManager({
                         <span className="text-lg">{getDomainIcon(session.domain)}</span>
                         <h3 className="font-medium text-gray-900">{session.title}</h3>
                         {session.isPrivate ? (
-                          <Lock className="w-4 h-4 text-gray-400" title="Private session" />
+                          <div title="Private session">
+                            <Lock className="w-4 h-4 text-gray-400" />
+                          </div>
                         ) : (
-                          <Unlock className="w-4 h-4 text-gray-400" title="Contributes to global learning" />
+                          <div title="Contributes to global learning">
+                            <Unlock className="w-4 h-4 text-gray-400" />
+                          </div>
                         )}
                       </div>
                       
